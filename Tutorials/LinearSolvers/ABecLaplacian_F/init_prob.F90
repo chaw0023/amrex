@@ -111,6 +111,12 @@ contains
     real(amrex_real), parameter :: tpi =  8.d0*atan(1.0)
     real(amrex_real), parameter :: fpi = 16.d0*atan(1.0)
     real(amrex_real), parameter :: fac = tpi*tpi*3.d0
+    integer :: bc_type=1
+    type(amrex_parmparse) pp
+
+    call amrex_parmparse_build(pp)
+    call pp % query("bc_type", bc_type)
+    call amrex_parmparse_destroy(pp)
 
     do k = lo(3), hi(3)
        z = prob_lo(3) + dx(3) * (dble(k)+0.5d0)
@@ -119,11 +125,18 @@ contains
           do i = lo(1), hi(1)
              x = prob_lo(1) + dx(1) * (dble(i)+0.5d0)
              
-             exact(i,j,k) = 1.d0 * (sin(tpi*x) * sin(tpi*y) * sin(tpi*z))  &
-                  &      + .25d0 * (sin(fpi*x) * sin(fpi*y) * sin(fpi*z))
+!             exact(i,j,k) = 1.d0 * (sin(tpi*x) * sin(tpi*y) * sin(tpi*z))  &
+!                  &      + .25d0 * (sin(fpi*x) * sin(fpi*y) * sin(fpi*z))
                 
-             rhs(i,j,k) = -fac * (sin(tpi*x) * sin(tpi*y) * sin(tpi*z))  &
-                  &       -fac * (sin(fpi*x) * sin(fpi*y) * sin(fpi*z))
+!             rhs(i,j,k) = -fac * (sin(tpi*x) * sin(tpi*y) * sin(tpi*z))  &
+!                  &       -fac * (sin(fpi*x) * sin(fpi*y) * sin(fpi*z))
+              if(bc_type==1) then
+              exact(i,j,k) = sin(tpi*x)*sin(tpi*y)*sin(tpi*z)
+              else
+              exact(i,j,k) = cos(tpi*x)*cos(tpi*y)*cos(tpi*z)
+              endif
+              rhs(i,j,k)   = -3.0*tpi*tpi*exact(i,j,k) 
+
           end do
        end do
     end do

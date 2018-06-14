@@ -18,6 +18,7 @@ module mytest_module
   ! prob_type 1 here is Poisson with homogeneous Dirichlet boundary.
   ! prob_type 2 here is ABecLaplacian with homogeneous Neumann boundary.
   integer, save :: prob_type = 1
+  integer, save, public :: bc_type   = 1  ! 1 for dirichlet, 2 for neumann
 
   integer, save :: verbose = 2
   integer, save :: cg_verbose = 0
@@ -66,6 +67,7 @@ contains
     call pp % query("composite_solve", composite_solve)
 
     call pp % query("prob_type", prob_type)
+    call pp % query("bc_type", bc_type)
 
     call pp % query("verbose", verbose)
     call pp % query("cg_verbose", cg_verbose)
@@ -127,7 +129,7 @@ contains
     do ilev = 0, max_level
        call amrex_boxarray_build(ba(ilev), dom)
        call ba(ilev) % maxSize(max_grid_size)
-       call dom % grow(-n_cell/4)     ! fine level cover the middle of the coarse domain
+!       call dom % grow(-n_cell/4)     ! fine level cover the middle of the coarse domain
        call dom % refine(ref_ratio)
     end do
   end subroutine init_grids
@@ -191,8 +193,15 @@ contains
        call poisson % set_maxorder(linop_maxorder)
 
        ! This is a 3d problem with Dirichlet BC
+       if(bc_type==1) then
+       print*, "Solving Dirichlet BC problem"
        call poisson % set_domain_bc([amrex_lo_dirichlet, amrex_lo_dirichlet, amrex_lo_dirichlet], &
             &                       [amrex_lo_dirichlet, amrex_lo_dirichlet, amrex_lo_dirichlet])
+       else
+       print*, "Solving Neumann BC problem"
+       call poisson % set_domain_bc([amrex_lo_neumann, amrex_lo_neumann, amrex_lo_neumann], &
+               &                       [amrex_lo_neumann, amrex_lo_neumann, amrex_lo_neumann])
+       endif
 
        do ilev = 0, max_level
           ! solution multifab's ghost cells at physical boundaries have been set to bc values.
